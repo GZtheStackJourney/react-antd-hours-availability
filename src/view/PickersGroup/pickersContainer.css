@@ -1,0 +1,26 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 400px;
+}
+
+.day-title {
+  text-align: left;
+}
+
+.day-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  flex: 1;
+  padding: 10;
+  border: lightblue;
+  border-width: 1px;
+  margin-top: 10px;
+}
+
+
+
+
+

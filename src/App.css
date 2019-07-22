@@ -23,6 +23,13 @@
   color: #61dafb;
 }
 
+.fade-in {
+  animation: fadeIn 500ms linear 0s 1 normal forwards;
+}
+.fade-out {
+  animation: fadeOut 500ms linear 0s 1 normal forwards;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
@@ -30,4 +37,14 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+@keyframes fadeIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
 }

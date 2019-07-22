@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-width: 400px;
+  min-width: 420px;
 }
 
 .day-title {
@@ -18,6 +18,13 @@
   border: lightblue;
   border-width: 1px;
   margin-top: 10px;
+}
+
+.pickers .actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  flex: 1;
 }
 
 

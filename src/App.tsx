@@ -15,7 +15,7 @@ const App: React.FC = (props) => {
     <div className="App">
       <header className="App-header">
         <p>
-          hellp
+          hello
         </p>
         <Button type="primary" onClick={handleClick}>Toggle</Button>
         <PickersGroup className={`${showPickers ? "fade-in": "fade-out"}`} />

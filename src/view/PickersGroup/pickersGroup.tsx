@@ -1,50 +1,34 @@
 import React, { useState } from 'react'
-import { TimePicker, Button } from 'antd'
+import { TimePicker, Button, message } from 'antd'
 import moment from 'moment'
 
-import './pickersContainer.css'
+import './pickersGroup.css'
+import { checkValidTime, isBeforeEndOfDay } from '../../utils'
+import { testData, ROWS_LIMIT, days } from '../../contants/date'
 
 interface IPickersGroupProps {
   className: string
 }
 
-const ROWS_LIMIT = 8
-
-const days = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-]
-
 const FC: React.FC<IPickersGroupProps> = ({
   className,
 }: IPickersGroupProps) => {
-  const [hours, setHours] = useState([
-    ['09:00', '12:00', '13:00', '18:00'],
-    ['09:00', '18:00'],
-    ['09:00', '18:00'],
-    ['09:00', '18:00'],
-    ['09:00', '18:00'],
-    ['09:00', '18:00'],
-    ['09:00', '18:00'],
-  ])
-  const [time, setTime] = useState(moment())
+  const [hours, setHours] = useState<string[][]>(testData)
 
-  const onChange = (newTime: any) => {
-    setTime(newTime)
+  const onChange = (newTime: any, dayIndex: number, timeIndex: number) => {
+    const newHours = [...hours]
+    const dayArr = [...hours[dayIndex]]
+    const selectedTime = moment(newTime, 'HH:mm')
+    if (!checkValidTime(timeIndex, selectedTime, dayArr)) {
+      message.error('The selected time is invalid')
+      return
+    }
+    dayArr[timeIndex] = selectedTime.format('HH:mm')
+    newHours[dayIndex] = dayArr
+    setHours(newHours)
   }
 
   const onAddRow = (dayIndex: number, currentRowEndIndex: number) => {
-    // which day is it
-    // which row is it
-    // lenght of the day
-    // eg 0 3 4
-    //
-    console.log(currentRowEndIndex)
     const newHours = [...hours]
     const dayArr = [...hours[dayIndex]]
     const startTime = moment(dayArr[currentRowEndIndex + 1], 'HH:mm')
@@ -55,7 +39,6 @@ const FC: React.FC<IPickersGroupProps> = ({
       .format('HH:mm')
     dayArr.splice(dayArr.length, 0, startTime, endTime)
     newHours[dayIndex] = dayArr
-    console.log(newHours)
     setHours(newHours)
   }
 
@@ -64,7 +47,6 @@ const FC: React.FC<IPickersGroupProps> = ({
     const dayArr = [...hours[dayIndex]]
     dayArr.splice(currentRowEndIndex, 2)
     newHours[dayIndex] = dayArr
-    console.log(newHours)
     setHours(newHours)
   }
 
@@ -73,13 +55,43 @@ const FC: React.FC<IPickersGroupProps> = ({
     currentRowEndIndex: number,
     timesArrayLength: number
   ) => {
-    // current row end index
-    // lenght of day times arr
-    //
-    console.log(currentRowEndIndex, timesArrayLength)
-    if(currentRowEndIndex + 2 >= ROWS_LIMIT) {
-      return <Button type="danger" onClick={() => onRemoveRow(dayIndex, currentRowEndIndex)}>Remove</Button>
-    }
+    const endTime = hours[dayIndex][timesArrayLength - 1]
+    if (timesArrayLength === 2 && !isBeforeEndOfDay(endTime)) {
+      return null
+    } // single row and end time is at end of the day
+    if (timesArrayLength === 2) {
+      return (
+        <Button
+          type="primary"
+          onClick={() => onAddRow(dayIndex, currentRowEndIndex)}
+        >
+          Add
+        </Button>
+      )
+    } // single row
+    if (currentRowEndIndex + 2 >= ROWS_LIMIT) {
+      return (
+        <Button
+          type="danger"
+          onClick={() => onRemoveRow(dayIndex, currentRowEndIndex)}
+        >
+          Remove
+        </Button>
+      )
+    } // number of index not greater than limit set
+    if (
+      currentRowEndIndex + 2 === timesArrayLength &&
+      !isBeforeEndOfDay(endTime)
+    ) {
+      return (
+        <Button
+          type="danger"
+          onClick={() => onRemoveRow(dayIndex, currentRowEndIndex)}
+        >
+          Remove
+        </Button>
+      )
+    } // last row and end time is after end of the day
     if (currentRowEndIndex + 2 === timesArrayLength) {
       return (
         <>
@@ -89,18 +101,21 @@ const FC: React.FC<IPickersGroupProps> = ({
           >
             Add
           </Button>
-          <Button type="danger" onClick={() => onRemoveRow(dayIndex, currentRowEndIndex)}>Remove</Button>
+          <Button
+            type="danger"
+            onClick={() => onRemoveRow(dayIndex, currentRowEndIndex)}
+          >
+            Remove
+          </Button>
         </>
       )
-    } else {
-      return (
-        <>
-          <Button type="primary">NAA</Button>
-          <Button type="primary">NAA</Button>
-        </>
-      )
-    }
+    } // last row
+    return null
   }
+
+  // const handleDisabledHours = () => {
+
+  // }
 
   return (
     <div className={className}>
@@ -110,15 +125,28 @@ const FC: React.FC<IPickersGroupProps> = ({
           for (let i = 0; i < timesArr.length; i += 2) {
             rows.push(
               <div key={`${index}${i}`} className="day-row">
-                <TimePicker
-                  value={moment(timesArr[i], 'hh:mm')}
-                  onChange={onChange}
-                />
-                <TimePicker
-                  value={moment(timesArr[i + 1], 'hh:mm')}
-                  onChange={onChange}
-                />
-                {getEditButton(index, i, timesArr.length)}
+                <div className="pickers">
+                  <TimePicker
+                    use12Hours={true}
+                    minuteStep={5}
+                    allowClear={false}
+                    format="h:mm a"
+                    disabledHours={() => [1,2]}
+                    value={moment(timesArr[i], 'hh:mm')}
+                    onChange={timeVal => onChange(timeVal, index, i)}
+                  />
+                  <TimePicker
+                    use12Hours={true}
+                    minuteStep={5}
+                    allowClear={false}
+                    format="h:mm a"
+                    value={moment(timesArr[i + 1], 'hh:mm')}
+                    onChange={timeVal => onChange(timeVal, index, i + 1)}
+                  />
+                </div>
+                <div className="actions">
+                  {getEditButton(index, i, timesArr.length)}
+                </div>
               </div>
             )
           }
@@ -138,18 +166,3 @@ const FC: React.FC<IPickersGroupProps> = ({
 }
 
 export const PickersGroup = FC
-
-/**
- * [
- *  ["09:00", "18:00"],
- *  ["09:00", "18:00"],
- *  ["09:00", "18:00"],
- *  ["09:00", "18:00"],
- *  ["09:00", "18:00"],
- *  ["09:00", "18:00"]
- *  ["09:00", "18:00"]
- * ]
- */
-
-// loop times
-// add times

@@ -1,23 +1,27 @@
 import moment, { Moment } from 'moment'
 
+export const FIRST_INDEX = 'index0'
+export const LAST_INDEX = 'indexL'
+export const INBETWEEN_INDEX = 'inbetween'
+
 export const checkValidTime = (
   timeIndex: any,
   selectedTime: Moment,
   dayArr: any
 ) => {
-  console.log(timeIndex, selectedTime, dayArr)
   if (timeIndex === 0) {
-    console.log(dayArr[timeIndex + 1])
-    return selectedTime.isBefore(moment(dayArr[timeIndex + 1], 'HH:mm'))
+    const result0 = selectedTime.isBefore(moment(dayArr[timeIndex + 1], 'HH:mm'))
+    return [result0, FIRST_INDEX]
   }
   if (timeIndex === dayArr.length - 1) {
-    console.log(dayArr[timeIndex - 1])
-    return selectedTime.isAfter(moment(dayArr[timeIndex - 1], 'HH:mm'))
+    const result1 = selectedTime.isAfter(moment(dayArr[timeIndex - 1], 'HH:mm'))
+    return [result1, LAST_INDEX]
   }
-  return selectedTime.isBetween(
+  const ibIndex = selectedTime.isBetween(
     moment(dayArr[timeIndex - 1], 'HH:mm'),
     moment(dayArr[timeIndex + 1], 'HH:mm')
   )
+  return [ibIndex, INBETWEEN_INDEX]
 }
 
 export const isBeforeEndOfDay = (timeString: string) => {

@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { TimePicker, Button, message } from 'antd'
 import moment from 'moment'
+import _ from 'lodash'
 
 import './pickersGroup.css'
-import { checkValidTime, isBeforeEndOfDay } from '../../utils'
+import { checkValidTime, isBeforeEndOfDay, FIRST_INDEX, LAST_INDEX, INBETWEEN_INDEX } from '../../utils'
 import { testData, ROWS_LIMIT, days } from '../../contants/date'
 
 interface IPickersGroupProps {
@@ -16,30 +17,35 @@ const FC: React.FC<IPickersGroupProps> = ({
   const [hours, setHours] = useState<string[][]>(testData)
 
   const onChange = (newTime: any, dayIndex: number, timeIndex: number) => {
-    const newHours = [...hours]
     const dayArr = [...hours[dayIndex]]
     const selectedTime = moment(newTime, 'HH:mm')
-    if (!checkValidTime(timeIndex, selectedTime, dayArr)) {
+    const checkResult = checkValidTime(timeIndex, selectedTime, dayArr)[0]
+    if (!checkResult) {
       message.error('The selected time is invalid')
       return
     }
-    dayArr[timeIndex] = selectedTime.format('HH:mm')
-    newHours[dayIndex] = dayArr
-    setHours(newHours)
+    setHours(oldHours => {
+      const newHours = [...oldHours]
+      dayArr[timeIndex] = selectedTime.format('HH:mm')
+      newHours[dayIndex] = dayArr
+      return newHours
+    })
   }
 
   const onAddRow = (dayIndex: number, currentRowEndIndex: number) => {
-    const newHours = [...hours]
     const dayArr = [...hours[dayIndex]]
     const startTime = moment(dayArr[currentRowEndIndex + 1], 'HH:mm')
-      .add('hours', 1)
+      .add(1, 'hours')
       .format('HH:mm')
     const endTime = moment(dayArr[currentRowEndIndex + 1], 'HH:mm')
-      .add('hours', 2)
+      .add(2, 'hours')
       .format('HH:mm')
     dayArr.splice(dayArr.length, 0, startTime, endTime)
-    newHours[dayIndex] = dayArr
-    setHours(newHours)
+    setHours(oldHours => {
+      const newHours = [...oldHours]
+      newHours[dayIndex] = dayArr
+      return newHours
+    })
   }
 
   const onRemoveRow = (dayIndex: number, currentRowEndIndex: number) => {
@@ -113,9 +119,59 @@ const FC: React.FC<IPickersGroupProps> = ({
     return null
   }
 
-  // const handleDisabledHours = () => {
+  const handleDisabledHours = (dayIndex: number, timeIndex: number) => {
+    const dayArr = [...hours[dayIndex]]
+    const checkResult = checkValidTime(timeIndex, moment(), dayArr)[1]
+    const prevEntry = hours[dayIndex][timeIndex - 1]
+    const followingEntry = hours[dayIndex][timeIndex + 1]
+    const prevHours = moment(prevEntry, "HH:mm").hours()
+    const followingHours = moment(followingEntry, "HH:mm").hours()
+    switch (checkResult) {
+      case FIRST_INDEX:
+        return _.range(followingHours + 1, 23, 1)
+      case LAST_INDEX:
+        return _.range(0, prevHours, 1)
+      case INBETWEEN_INDEX:
+        const start = _.range(0, prevHours, 1)
+        const end = _.range(followingHours + 1, 23, 1)
+        return [...start, ...end]
+      default:
+        return []
+    }
+  }
 
-  // }
+  const handleDisabledMinutes = (dayIndex: number, timeIndex: number, selectedHours: number) => {
+    const dayArr = [...hours[dayIndex]]
+    const checkResult = checkValidTime(timeIndex, moment(), dayArr)[1]
+    const prevEntry = hours[dayIndex][timeIndex - 1]
+    const followingEntry = hours[dayIndex][timeIndex + 1]
+    const prevHours = moment(prevEntry, "HH:mm").hours()
+    const followingHours = moment(followingEntry, "HH:mm").hours()
+    const prevMins = moment(prevEntry, "HH:mm").minutes()
+    const followingMins = moment(followingEntry, "HH:mm").minutes()
+    switch (checkResult) {
+      case FIRST_INDEX:
+        if(selectedHours === followingHours) {
+          return _.range(followingMins, 59, 1)
+        }
+        return []
+      case LAST_INDEX:
+        if(selectedHours === prevHours) {
+          return _.range(0, prevMins + 1, 1)
+        }
+        return []
+      case INBETWEEN_INDEX:
+        if(selectedHours === followingHours) {
+          return _.range(followingMins, 59, 1)
+        }
+        if(selectedHours === prevHours) {
+          return _.range(0, prevMins + 1, 1)
+        }
+        return []
+      default:
+        return []
+    }
+  }
 
   return (
     <div className={className}>
@@ -131,7 +187,8 @@ const FC: React.FC<IPickersGroupProps> = ({
                     minuteStep={5}
                     allowClear={false}
                     format="h:mm a"
-                    disabledHours={() => [1,2]}
+                    disabledHours={() => handleDisabledHours(index, i)}
+                    disabledMinutes={(selectedHours) => handleDisabledMinutes(index, i, selectedHours)}
                     value={moment(timesArr[i], 'hh:mm')}
                     onChange={timeVal => onChange(timeVal, index, i)}
                   />
@@ -140,6 +197,8 @@ const FC: React.FC<IPickersGroupProps> = ({
                     minuteStep={5}
                     allowClear={false}
                     format="h:mm a"
+                    disabledHours={() => handleDisabledHours(index, i + 1)}
+                    disabledMinutes={(selectedHours) => handleDisabledMinutes(index, i + 1, selectedHours)}
                     value={moment(timesArr[i + 1], 'hh:mm')}
                     onChange={timeVal => onChange(timeVal, index, i + 1)}
                   />

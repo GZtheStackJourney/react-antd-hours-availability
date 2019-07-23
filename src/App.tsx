@@ -18,7 +18,6 @@ const App: React.FC = (props) => {
           hello
         </p>
         <Button type="primary" onClick={handleClick}>Toggle</Button>
-        <PickersGroup className={`${showPickers ? "fade-in": "fade-out"}`} />
         <a
           className={`App-link ${showPickers ? "fade-in": "fade-out"}`}
           href="https://reactjs.org"
@@ -28,6 +27,9 @@ const App: React.FC = (props) => {
           Learn React
         </a>
       </header>
+      <div className="main-body">
+        <PickersGroup className={`${showPickers ? "fade-in": "fade-out"}`} />
+      </div>
     </div>
   );
 }

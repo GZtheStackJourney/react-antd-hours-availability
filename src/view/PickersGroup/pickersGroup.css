@@ -2,11 +2,17 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-width: 420px;
+  min-width: 410px;
 }
 
 .day-title {
   text-align: left;
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
 }
 
 .day-row {
@@ -23,7 +29,7 @@
 .pickers .actions {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex: 1;
 }
 

@@ -1,11 +1,18 @@
 import React, { useState } from 'react'
-import { TimePicker, Button, message } from 'antd'
+import { Button, message, Switch } from 'antd'
 import moment from 'moment'
 import _ from 'lodash'
 
 import './pickersGroup.css'
-import { checkValidTime, isBeforeEndOfDay, FIRST_INDEX, LAST_INDEX, INBETWEEN_INDEX } from '../../utils'
+import {
+  checkValidTime,
+  isBeforeEndOfDay,
+  FIRST_INDEX,
+  LAST_INDEX,
+  INBETWEEN_INDEX,
+} from '../../utils'
 import { testData, ROWS_LIMIT, days } from '../../contants/date'
+import { CustomTimePicker } from '../../components/CustomTimePicker'
 
 interface IPickersGroupProps {
   className: string
@@ -15,6 +22,14 @@ const FC: React.FC<IPickersGroupProps> = ({
   className,
 }: IPickersGroupProps) => {
   const [hours, setHours] = useState<string[][]>(testData)
+
+  const onSwitchChange = (checked: boolean, e: Event, dayIndex: number) => {
+    setHours(oldHours => {
+      const newHours = [...oldHours]
+      newHours[dayIndex] = !checked ? ['Off', 'Off'] : ['09:30', '18:30']
+      return newHours
+    })
+  }
 
   const onChange = (newTime: any, dayIndex: number, timeIndex: number) => {
     const dayArr = [...hours[dayIndex]]
@@ -124,8 +139,8 @@ const FC: React.FC<IPickersGroupProps> = ({
     const checkResult = checkValidTime(timeIndex, moment(), dayArr)[1]
     const prevEntry = hours[dayIndex][timeIndex - 1]
     const followingEntry = hours[dayIndex][timeIndex + 1]
-    const prevHours = moment(prevEntry, "HH:mm").hours()
-    const followingHours = moment(followingEntry, "HH:mm").hours()
+    const prevHours = moment(prevEntry, 'HH:mm').hours()
+    const followingHours = moment(followingEntry, 'HH:mm').hours()
     switch (checkResult) {
       case FIRST_INDEX:
         return _.range(followingHours + 1, 23, 1)
@@ -140,31 +155,35 @@ const FC: React.FC<IPickersGroupProps> = ({
     }
   }
 
-  const handleDisabledMinutes = (dayIndex: number, timeIndex: number, selectedHours: number) => {
+  const handleDisabledMinutes = (
+    dayIndex: number,
+    timeIndex: number,
+    selectedHours: number
+  ) => {
     const dayArr = [...hours[dayIndex]]
     const checkResult = checkValidTime(timeIndex, moment(), dayArr)[1]
     const prevEntry = hours[dayIndex][timeIndex - 1]
     const followingEntry = hours[dayIndex][timeIndex + 1]
-    const prevHours = moment(prevEntry, "HH:mm").hours()
-    const followingHours = moment(followingEntry, "HH:mm").hours()
-    const prevMins = moment(prevEntry, "HH:mm").minutes()
-    const followingMins = moment(followingEntry, "HH:mm").minutes()
+    const prevHours = moment(prevEntry, 'HH:mm').hours()
+    const followingHours = moment(followingEntry, 'HH:mm').hours()
+    const prevMins = moment(prevEntry, 'HH:mm').minutes()
+    const followingMins = moment(followingEntry, 'HH:mm').minutes()
     switch (checkResult) {
       case FIRST_INDEX:
-        if(selectedHours === followingHours) {
+        if (selectedHours === followingHours) {
           return _.range(followingMins, 59, 1)
         }
         return []
       case LAST_INDEX:
-        if(selectedHours === prevHours) {
+        if (selectedHours === prevHours) {
           return _.range(0, prevMins + 1, 1)
         }
         return []
       case INBETWEEN_INDEX:
-        if(selectedHours === followingHours) {
+        if (selectedHours === followingHours) {
           return _.range(followingMins, 59, 1)
         }
-        if(selectedHours === prevHours) {
+        if (selectedHours === prevHours) {
           return _.range(0, prevMins + 1, 1)
         }
         return []
@@ -173,53 +192,63 @@ const FC: React.FC<IPickersGroupProps> = ({
     }
   }
 
-  return (
-    <div className={className}>
-      <div className="container">
-        {hours.map((timesArr, index) => {
-          const rows = []
-          for (let i = 0; i < timesArr.length; i += 2) {
-            rows.push(
-              <div key={`${index}${i}`} className="day-row">
-                <div className="pickers">
-                  <TimePicker
-                    use12Hours={true}
-                    minuteStep={5}
-                    allowClear={false}
-                    format="h:mm a"
-                    disabledHours={() => handleDisabledHours(index, i)}
-                    disabledMinutes={(selectedHours) => handleDisabledMinutes(index, i, selectedHours)}
-                    value={moment(timesArr[i], 'hh:mm')}
-                    onChange={timeVal => onChange(timeVal, index, i)}
-                  />
-                  <TimePicker
-                    use12Hours={true}
-                    minuteStep={5}
-                    allowClear={false}
-                    format="h:mm a"
-                    disabledHours={() => handleDisabledHours(index, i + 1)}
-                    disabledMinutes={(selectedHours) => handleDisabledMinutes(index, i + 1, selectedHours)}
-                    value={moment(timesArr[i + 1], 'hh:mm')}
-                    onChange={timeVal => onChange(timeVal, index, i + 1)}
-                  />
-                </div>
-                <div className="actions">
-                  {getEditButton(index, i, timesArr.length)}
-                </div>
-              </div>
-            )
-          }
-
-          return (
-            <div key={days[index]}>
-              <div className="day-title">{days[index]}</div>
-              {rows.map(TimeRow => {
-                return TimeRow
-              })}
+  const renderRows = (timesArr: string[], index: number) => {
+    const rows = []
+    for (let i = 0; i < timesArr.length; i += 2) {
+      if (hours[index][0] === 'Off') {
+        rows.push(
+          <div key={`${index}${i}`} className="day-row">
+            {null}
+          </div>
+        )
+      } else {
+        rows.push(
+          <div key={`${index}${i}`} className="day-row">
+            <div className="pickers">
+              <CustomTimePicker
+                disabledHours={() => handleDisabledHours(index, i)}
+                disabledMinutes={selectedHours =>
+                  handleDisabledMinutes(index, i, selectedHours)
+                }
+                value={moment(timesArr[i], 'hh:mm')}
+                onChange={timeVal => onChange(timeVal, index, i)}
+              />
+              <CustomTimePicker
+                disabledHours={() => handleDisabledHours(index, i + 1)}
+                disabledMinutes={selectedHours =>
+                  handleDisabledMinutes(index, i + 1, selectedHours)
+                }
+                value={moment(timesArr[i + 1], 'hh:mm')}
+                onChange={timeVal => onChange(timeVal, index, i + 1)}
+              />
             </div>
-          )
+            <div className="actions">
+              {getEditButton(index, i, timesArr.length)}
+            </div>
+          </div>
+        )
+      }
+    }
+
+    return (
+      <div key={days[index]}>
+        <div className="day-title">
+          {days[index]}{' '}
+          <Switch
+            checked={hours[index][0] !== 'Off'}
+            onChange={(a, b) => onSwitchChange(a, b, index)}
+          />
+        </div>
+        {rows.map(TimeRow => {
+          return TimeRow
         })}
       </div>
+    )
+  }
+
+  return (
+    <div className={className}>
+      <div className="container">{hours.map(renderRows)}</div>
     </div>
   )
 }
